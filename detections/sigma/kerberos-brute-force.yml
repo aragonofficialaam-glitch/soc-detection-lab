@@ -1,0 +1,24 @@
+﻿title: Kerberos Password Brute Force Followed by Successful Logon
+id: 4b2e7f1a-9c3d-4a6e-8b2f-1d5c7e9a3f4b
+status: experimental
+description: Detects multiple Kerberos pre-authentication failures (4771, Failure_Code 0x18) for the same account from the same source, followed by a successful AS-REQ (4768), indicating a successful password brute-force or spray attack.
+references:
+    - https://attack.mitre.org/techniques/T1110/003/
+author: Aragon
+date: 2026-10-20
+logsource:
+    product: windows
+    service: security
+detection:
+    selection_fail:
+        EventID: 4771
+        Failure_Code: '0x18'
+    timeframe: 5m
+    condition: selection_fail | count() by Account_Name, Client_Address > 2
+level: high
+tags:
+    - attack.credential_access
+    - attack.t1110.003
+falsepositives:
+    - User mistyping their own password multiple times
+    - Expired password causing repeated failed attempts

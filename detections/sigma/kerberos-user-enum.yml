@@ -1,0 +1,25 @@
+﻿title: Kerberos User Enumeration via Multiple AS-REQ
+id: 7f3a9c1e-2b4d-4e8f-9a1c-6d5e8f0a1b2c
+status: experimental
+description: Detects multiple Kerberos AS-REQ (4768) requests for different accounts from the same source in a short time window, indicating user enumeration or brute-force activity (e.g. Kerbrute).
+references:
+    - https://attack.mitre.org/techniques/T1589/002/
+author: Aragon
+date: 2026-10-20
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4768
+    filter:
+        IpAddress: '::1'
+    timeframe: 1m
+    condition: selection and not filter | count(Account_Name) by IpAddress > 3
+level: medium
+tags:
+    - attack.discovery
+    - attack.t1589.002
+falsepositives:
+    - Legitimate scripts or admin tools that enumerate accounts
+    - Password reset waves affecting multiple users

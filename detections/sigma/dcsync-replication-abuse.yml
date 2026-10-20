@@ -1,0 +1,27 @@
+﻿title: Potential DCSync Attack (Directory Replication Rights Abuse)
+id: 6c4e8b2a-1f9d-4a7e-9c3b-8e5a2d6f1c4b
+status: experimental
+description: Detects an account using Directory Replication Service (DRS) rights (Replicating Directory Changes / Replicating Directory Changes All) which are normally reserved for Domain Controllers, indicating a potential DCSync credential dumping attack.
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+author: Aragon
+date: 2026-10-20
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4662
+        Properties|contains:
+            - '1131f6ad-9c07-11d1-f79f-00c04fc2dcd2'
+            - '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2'
+    filter:
+        Account_Name|endswith: '$'
+    condition: selection and not filter
+level: critical
+tags:
+    - attack.credential_access
+    - attack.t1003.006
+falsepositives:
+    - Domain Controller computer accounts replicating normally (filtered out above)
+    - Legitimate Azure AD Connect or backup tools with explicitly granted replication rights

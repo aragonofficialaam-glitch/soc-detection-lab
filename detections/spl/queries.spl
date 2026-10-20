@@ -1,0 +1,28 @@
+﻿# Detection Queries (SPL) - SOC Detection & Response Lab
+# Matches rules in /detections/sigma/
+
+## 1. Kerberos User Enumeration
+index=ad host=DC01 EventCode=4768 Client_Address!="::1"
+| bin _time span=1m
+| stats dc(Account_Name) as unique_accounts, values(Account_Name) as accounts by _time, Client_Address
+| where unique_accounts > 3
+
+## 2. Kerberos Password Brute Force -> Successful Logon
+index=ad host=DC01 EventCode=4771 Failure_Code="0x18" Client_Address!="::1"
+| bin _time span=5m
+| stats count as failed_attempts by _time, Account_Name, Client_Address
+| where failed_attempts > 2
+
+## 3. New Domain Admin Shortly After Account Creation
+index=ad host=DC01 EventCode=4720 | eval new_user=Account_Name | table _time, new_user
+| append [search index=ad host=DC01 EventCode=4728 Group_Name="Domain Admins" | eval new_user=user | table _time, new_user]
+| sort _time
+
+## 4. Remote Command Execution via Task Scheduler as SYSTEM
+index=sysmon host=DC01 EventCode=1 Image="*\\cmd.exe" ParentImage="*\\svchost.exe" User="NT AUTHORITY\\SYSTEM" CommandLine="*Windows\\Temp*"
+| table _time, Image, CommandLine, ParentImage, User
+
+## 5. Potential DCSync Attack
+index=ad host=DC01 EventCode=4662 ("1131f6ad-9c07-11d1-f79f-00c04fc2dcd2" OR "1131f6aa-9c07-11d1-f79f-00c04fc2dcd2") Account_Name!="*$"
+| table _time, Account_Name
+| dedup Account_Name

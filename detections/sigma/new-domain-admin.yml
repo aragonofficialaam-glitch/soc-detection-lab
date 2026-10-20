@@ -1,0 +1,28 @@
+﻿title: New Domain Admin Member Shortly After Account Creation
+id: 9a1d4f6e-3c7b-4e2a-8f5d-2b6a9c1e4f7d
+status: experimental
+description: Detects a new user account being created and added to the Domain Admins group within a short time window, indicating privilege escalation or unauthorized persistence.
+references:
+    - https://attack.mitre.org/techniques/T1136/001/
+    - https://attack.mitre.org/techniques/T1098/007/
+author: Aragon
+date: 2026-10-20
+logsource:
+    product: windows
+    service: security
+detection:
+    account_created:
+        EventID: 4720
+    added_to_admins:
+        EventID: 4728
+        Group_Name: 'Domain Admins'
+    timeframe: 5m
+    condition: account_created and added_to_admins | match on Account_Name/user field
+level: critical
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1136.001
+    - attack.t1098.007
+falsepositives:
+    - Legitimate IT onboarding of a new administrator (should always have a change ticket)

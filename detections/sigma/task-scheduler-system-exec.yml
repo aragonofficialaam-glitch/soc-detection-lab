@@ -1,0 +1,25 @@
+﻿title: Remote Command Execution via Task Scheduler (ATSVC) as SYSTEM
+id: 2e8f4a1c-6b9d-4f3e-a7c1-5d2e9b4f8a6c
+status: experimental
+description: Detects cmd.exe spawned by svchost.exe running as NT AUTHORITY\SYSTEM with output redirected to a temp file, consistent with remote task execution via the Task Scheduler service (e.g. Impacket atexec.py).
+references:
+    - https://attack.mitre.org/techniques/T1053/005/
+author: Aragon
+date: 2026-10-20
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        Image|endswith: '\cmd.exe'
+        ParentImage|endswith: '\svchost.exe'
+        User: 'NT AUTHORITY\SYSTEM'
+        CommandLine|contains: 'Windows\Temp\'
+    condition: selection
+level: high
+tags:
+    - attack.execution
+    - attack.persistence
+    - attack.t1053.005
+falsepositives:
+    - Legitimate scheduled tasks configured by IT that run as SYSTEM and write to Temp (rare, should be an allowlisted task name)
