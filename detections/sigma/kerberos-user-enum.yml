@@ -1,25 +1,46 @@
-﻿title: Kerberos User Enumeration via Multiple AS-REQ
-id: 7f3a9c1e-2b4d-4e8f-9a1c-6d5e8f0a1b2c
+title: Kerberos TGT Request (4768)
+id: 3c8e1f2a-9b7d-4a61-8e2f-5d0c4b9a7e13
+name: kerberos_tgt_request
 status: experimental
-description: Detects multiple Kerberos AS-REQ (4768) requests for different accounts from the same source in a short time window, indicating user enumeration or brute-force activity (e.g. Kerbrute).
-references:
-    - https://attack.mitre.org/techniques/T1589/002/
+description: Base rule. Kerberos TGT requests (AS-REQ) excluding loopback sources. Used by the enumeration correlation rule.
 author: Aragon
-date: 2026-10-20
+date: 2026-10-21
 logsource:
     product: windows
     service: security
 detection:
     selection:
         EventID: 4768
-    filter:
-        IpAddress: '::1'
-    timeframe: 1m
-    condition: selection and not filter | count(Account_Name) by IpAddress > 3
-level: medium
+    filter_loopback:
+        IpAddress:
+            - '::1'
+            - '127.0.0.1'
+            - '::ffff:127.0.0.1'
+    condition: selection and not filter_loopback
+level: informational
+---
+title: Kerberos User Enumeration via Multiple AS-REQ
+id: 8a1d4e6b-2f3c-4b9e-a7d5-1c0f6e8b3a92
+status: experimental
+description: Detects a single source requesting Kerberos TGTs (4768) for more than 3 distinct accounts within 1 minute, indicating user enumeration or password spraying (e.g. Kerbrute).
+references:
+    - https://attack.mitre.org/techniques/T1087/002/
+author: Aragon
+date: 2026-10-21
+correlation:
+    type: value_count
+    rules:
+        - kerberos_tgt_request
+    group-by:
+        - IpAddress
+    timespan: 1m
+    condition:
+        gt: 3
+        field: TargetUserName
 tags:
     - attack.discovery
-    - attack.t1589.002
+    - attack.t1087.002
 falsepositives:
-    - Legitimate scripts or admin tools that enumerate accounts
-    - Password reset waves affecting multiple users
+    - Admin tools or scripts that query many accounts
+    - Shared hosts (jump servers, Citrix/RDS) where many users log in from the same IP
+level: medium
