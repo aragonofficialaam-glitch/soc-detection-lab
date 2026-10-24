@@ -1,24 +1,76 @@
-﻿title: Kerberos Password Brute Force Followed by Successful Logon
-id: 4b2e7f1a-9c3d-4a6e-8b2f-1d5c7e9a3f4b
+﻿title: Kerberos Pre-Authentication Failure - Wrong Password
+id: 6e2a9d4c-1f7b-4c3e-9a8d-2b5f0e7c1a64
+name: kerberos_preauth_wrong_password
 status: experimental
-description: Detects multiple Kerberos pre-authentication failures (4771, Failure_Code 0x18) for the same account from the same source, followed by a successful AS-REQ (4768), indicating a successful password brute-force or spray attack.
-references:
-    - https://attack.mitre.org/techniques/T1110/003/
+description: Base rule. Kerberos pre-authentication failed due to a wrong password (4771, status 0x18).
 author: Aragon
-date: 2026-10-20
+date: 2026-10-21
 logsource:
     product: windows
     service: security
 detection:
-    selection_fail:
+    selection:
         EventID: 4771
-        Failure_Code: '0x18'
-    timeframe: 5m
-    condition: selection_fail | count() by Account_Name, Client_Address > 2
-level: high
+        Status: '0x18'
+    condition: selection
+level: informational
+---
+title: Kerberos Successful TGT Request
+id: 9b4f1e7a-3c2d-4e8b-a6f5-7d1c0b9e2a38
+name: kerberos_tgt_success
+status: experimental
+description: Base rule. Successful Kerberos TGT request (4768, status 0x0).
+author: Aragon
+date: 2026-10-21
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4768
+        Status: '0x0'
+    condition: selection
+level: informational
+---
+title: Multiple Kerberos Password Failures for One Account
+id: 2d7c5a1e-8f4b-4b9a-b3e6-0a9f1d6c4e75
+name: kerberos_multiple_password_failures
+status: experimental
+description: Same source failed Kerberos pre-authentication 5 or more times for the same account within 5 minutes.
+author: Aragon
+date: 2026-10-21
+correlation:
+    type: event_count
+    rules:
+        - kerberos_preauth_wrong_password
+    group-by:
+        - TargetUserName
+        - IpAddress
+    timespan: 5m
+    condition:
+        gte: 5
+level: medium
+---
+title: Kerberos Password Brute Force Followed by Successful Logon
+id: 4b2e7f1a-9c3d-4a6e-8b2f-1d5c7e9a3f4b
+status: experimental
+description: Detects repeated Kerberos pre-authentication failures (4771, 0x18) for one account from one source, followed by a successful TGT request (4768) for the same account and source. Indicates a successful password guessing attack.
+references:
+    - https://attack.mitre.org/techniques/T1110/001/
+author: Aragon
+date: 2026-10-21
+correlation:
+    type: temporal_ordered
+    rules:
+        - kerberos_multiple_password_failures
+        - kerberos_tgt_success
+    group-by:
+        - TargetUserName
+        - IpAddress
+    timespan: 10m
 tags:
     - attack.credential_access
-    - attack.t1110.003
+    - attack.t1110.001
 falsepositives:
-    - User mistyping their own password multiple times
-    - Expired password causing repeated failed attempts
+    - User who changed their password while a device (phone, mapped drive) keeps retrying the old one, then the user logs in normally
+level: high
