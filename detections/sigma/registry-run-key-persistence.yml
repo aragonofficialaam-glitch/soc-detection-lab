@@ -1,0 +1,25 @@
+﻿title: Registry Run Key Modification for Persistence
+id: 9e4f2c8a-5d1b-4e7f-8a3c-6b9d2e5f1a8c
+status: experimental
+description: Detects reg.exe adding a value to the HKCU or HKLM Run key, spawned from cmd.exe, indicating an attempt to establish autostart persistence.
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+author: Aragon
+date: 2026-10-24
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        Image|endswith: '\reg.exe'
+        CommandLine|contains:
+            - 'CurrentVersion\Run'
+        CommandLine|contains: ' ADD '
+        ParentImage|endswith: '\cmd.exe'
+    condition: selection
+level: medium
+tags:
+    - attack.persistence
+    - attack.t1547.001
+falsepositives:
+    - Legitimate software installers adding startup entries (should correlate with a known installation event)

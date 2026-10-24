@@ -1,0 +1,24 @@
+﻿title: Suspicious Process Injection Toolchain (RWX/MockingJay-style)
+id: 1f6a3c9e-8b4d-4e2f-9c7a-5d8b2e4f1a6c
+status: experimental
+description: Detects execution of RWX-section process injection utility binaries (e.g. searchVuln.exe, RWXinjectionLocal.exe) from non-standard paths. This technique (MockingJay-style injection) exploits writable-executable PE sections and specifically avoids VirtualAlloc/WriteProcessMemory/CreateRemoteThread API calls, evading Sysmon EventID 8/10 (CreateRemoteThread/ProcessAccess) detection. Detection here relies on execution of the known injector binaries rather than the injection behavior itself, since the injection technique was confirmed to evade standard Sysmon process-injection telemetry during lab testing.
+references:
+    - https://attack.mitre.org/techniques/T1055/
+    - https://www.securityjoes.com/post/process-mockingjay-echoing-rwx-in-userland-to-achieve-code-execution
+author: Aragon
+date: 2026-10-24
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        Image|endswith:
+            - '\searchVuln.exe'
+            - '\RWXinjectionLocal.exe'
+    condition: selection
+level: high
+tags:
+    - attack.defense_evasion
+    - attack.t1055
+falsepositives:
+    - None expected; these are not legitimate Windows or common third-party binary names

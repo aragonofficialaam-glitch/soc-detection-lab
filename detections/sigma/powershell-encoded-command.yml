@@ -1,0 +1,27 @@
+﻿title: Obfuscated PowerShell Execution via EncodedCommand
+id: 8d2e5f3a-7c1b-4e9f-a6d2-3f8b5c1e9a2d
+status: experimental
+description: Detects PowerShell executed with the -EncodedCommand (or -e) parameter, a common technique used to obfuscate malicious commands and evade simple text-based detection or logging.
+references:
+    - https://attack.mitre.org/techniques/T1059/001/
+author: Aragon
+date: 2026-10-22
+logsource:
+    product: windows
+    category: process_creation
+detection:
+    selection:
+        Image|endswith: '\powershell.exe'
+        CommandLine|contains:
+            - ' -e '
+            - ' -enc '
+            - ' -EncodedCommand'
+    condition: selection
+level: medium
+tags:
+    - attack.execution
+    - attack.defense_evasion
+    - attack.t1059.001
+falsepositives:
+    - Legitimate IT automation scripts and deployment tools that use encoded commands
+    - Scheduled tasks or SCCM/Intune packages passing complex arguments via Base64
