@@ -1,0 +1,29 @@
+title: MockingJay Injection - msys-2.0.dll Loaded by Unexpected Process
+id: 5a2c8e4f-7d1b-4f9a-a3e6-9b4d1f7c2e58
+status: test
+description: Detects msys-2.0.dll (a legitimately signed DLL with a read-write-execute section abused by the MockingJay injection technique) being loaded by a process outside the normal Git for Windows or MSYS2 folders. Behavior-based, so it does not depend on the attacker tool name or hash. Validated in lab with Atomic Red Team T1055-5 after adding msys-2.0.dll to the Sysmon ImageLoad config, since the default SwiftOnSecurity config did not log this DLL load.
+references:
+    - https://attack.mitre.org/techniques/T1055/
+    - https://www.securityjoes.com/post/process-mockingjay-echoing-rwx-in-userland-to-achieve-code-execution
+author: Aragon
+date: 2026-10-29
+logsource:
+    product: windows
+    category: image_load
+detection:
+    selection:
+        ImageLoaded|endswith: '\msys-2.0.dll'
+    filter_legit_paths:
+        Image|contains:
+            - '\Git\usr\bin\'
+            - '\Git\mingw64\bin\'
+            - '\msys64\usr\bin\'
+            - '\msys64\mingw64\bin\'
+    condition: selection and not filter_legit_paths
+level: high
+tags:
+    - attack.defense_evasion
+    - attack.privilege_escalation
+    - attack.t1055
+falsepositives:
+    - Developer tools that bundle their own copy of msys-2.0.dll in a non-standard folder (allowlist by path)

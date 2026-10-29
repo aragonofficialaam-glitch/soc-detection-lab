@@ -1,0 +1,27 @@
+title: Registry Run Key Value Set for Persistence
+id: 3f7b1d9e-2a6c-4e8f-b5d3-8c1e4a7f2b96
+status: experimental
+description: Detects any process writing a value to a Run or RunOnce key (HKLM or HKCU), regardless of the tool used (reg.exe, PowerShell, direct API calls). Excludes software running from Program Files and the Windows installer to reduce noise.
+references:
+    - https://attack.mitre.org/techniques/T1547/001/
+author: Aragon
+date: 2026-10-29
+logsource:
+    product: windows
+    category: registry_set
+detection:
+    selection:
+        TargetObject|contains: '\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
+    filter_program_files:
+        Image|startswith:
+            - 'C:\Program Files\'
+            - 'C:\Program Files (x86)\'
+    filter_msiexec:
+        Image: 'C:\Windows\System32\msiexec.exe'
+    condition: selection and not 1 of filter_*
+level: medium
+tags:
+    - attack.persistence
+    - attack.t1547.001
+falsepositives:
+    - Per-user apps installed in AppData that add themselves to startup (e.g. OneDrive, Teams, Discord); allowlist by Image

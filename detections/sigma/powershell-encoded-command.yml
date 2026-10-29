@@ -1,27 +1,36 @@
-﻿title: Obfuscated PowerShell Execution via EncodedCommand
+title: Obfuscated PowerShell Execution via EncodedCommand
 id: 8d2e5f3a-7c1b-4e9f-a6d2-3f8b5c1e9a2d
 status: experimental
-description: Detects PowerShell executed with the -EncodedCommand (or -e) parameter, a common technique used to obfuscate malicious commands and evade simple text-based detection or logging.
+description: Detects PowerShell (Windows PowerShell or PowerShell 7, including renamed binaries) executed with -EncodedCommand or any of its abbreviations, used to hide malicious commands in Base64.
 references:
     - https://attack.mitre.org/techniques/T1059/001/
+    - https://attack.mitre.org/techniques/T1027/010/
 author: Aragon
 date: 2026-10-22
+modified: 2026-10-29
 logsource:
     product: windows
     category: process_creation
 detection:
-    selection:
-        Image|endswith: '\powershell.exe'
-        CommandLine|contains:
+    selection_img:
+        - Image|endswith:
+            - '\powershell.exe'
+            - '\pwsh.exe'
+        - OriginalFileName:
+            - 'PowerShell.EXE'
+            - 'pwsh.dll'
+    selection_cli:
+        CommandLine|contains|windash:
             - ' -e '
-            - ' -enc '
-            - ' -EncodedCommand'
-    condition: selection
+            - ' -en '
+            - ' -enc'
+            - ' -ec '
+    condition: all of selection_*
 level: medium
 tags:
     - attack.execution
     - attack.defense_evasion
     - attack.t1059.001
+    - attack.t1027.010
 falsepositives:
-    - Legitimate IT automation scripts and deployment tools that use encoded commands
-    - Scheduled tasks or SCCM/Intune packages passing complex arguments via Base64
+    - IT automation, SCCM/Intune packages or deployment tools that pass arguments in Base64

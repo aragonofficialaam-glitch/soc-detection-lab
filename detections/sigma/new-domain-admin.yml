@@ -1,28 +1,67 @@
-﻿title: New Domain Admin Member Shortly After Account Creation
-id: 9a1d4f6e-3c7b-4e2a-8f5d-2b6a9c1e4f7d
+title: New User Account Created
+id: 7b3e9a2d-4c1f-4d8e-a5b6-1e9c3f7a2d84
+name: new_user_account_created
 status: experimental
-description: Detects a new user account being created and added to the Domain Admins group within a short time window, indicating privilege escalation or unauthorized persistence.
-references:
-    - https://attack.mitre.org/techniques/T1136/001/
-    - https://attack.mitre.org/techniques/T1098/007/
+description: Base rule. A user account was created (4720).
 author: Aragon
-date: 2026-10-20
+date: 2026-10-29
 logsource:
     product: windows
     service: security
 detection:
-    account_created:
+    selection:
         EventID: 4720
-    added_to_admins:
+    condition: selection
+level: informational
+---
+title: Member Added to Domain Admins
+id: 4e8a1c6f-2d9b-4f3a-b7e5-8c2d6a9f1e37
+name: member_added_to_domain_admins
+status: experimental
+description: A member was added to the Domain Admins group (4728, group SID ending in -512). Identified by SID instead of name so it works in any Windows language.
+author: Aragon
+date: 2026-10-29
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
         EventID: 4728
-        Group_Name: 'Domain Admins'
-    timeframe: 5m
-    condition: account_created and added_to_admins | match on Account_Name/user field
-level: critical
+        TargetSid|endswith: '-512'
+    condition: selection
+level: high
 tags:
     - attack.persistence
     - attack.privilege_escalation
-    - attack.t1136.001
+    - attack.t1098.007
+---
+title: New Domain Admin Member Shortly After Account Creation
+id: 9a1d4f6e-3c7b-4e2a-8f5d-2b6a9c1e4f7d
+status: experimental
+description: Detects a newly created account being added to Domain Admins within 1 hour. The account is matched by SID (TargetSid in 4720 = MemberSid in 4728). Indicates privilege escalation or attacker persistence.
+references:
+    - https://attack.mitre.org/techniques/T1136/002/
+    - https://attack.mitre.org/techniques/T1098/007/
+author: Aragon
+date: 2026-10-20
+modified: 2026-10-29
+correlation:
+    type: temporal_ordered
+    rules:
+        - new_user_account_created
+        - member_added_to_domain_admins
+    aliases:
+        new_account_sid:
+            new_user_account_created: TargetSid
+            member_added_to_domain_admins: MemberSid
+    group-by:
+        - new_account_sid
+    timespan: 1h
+tags:
+    - attack.persistence
+    - attack.privilege_escalation
+    - attack.t1136.002
     - attack.t1098.007
 falsepositives:
-    - Legitimate IT onboarding of a new administrator (should always have a change ticket)
+    - Legitimate onboarding of a new administrator (must match an approved change ticket)
+level: critical

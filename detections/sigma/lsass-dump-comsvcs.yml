@@ -1,24 +1,30 @@
-﻿title: LSASS Memory Dump via comsvcs.dll MiniDump
+title: LSASS Memory Dump via comsvcs.dll MiniDump
 id: 5f9c2e8b-3a7d-4f1e-b8c6-2e9a5d3f7c1b
 status: experimental
-description: Detects rundll32.exe invoking the MiniDump export of comsvcs.dll targeting the lsass.exe process, a living-off-the-land technique for dumping credentials from memory without external tools.
+description: Detects rundll32.exe calling the MiniDump export of comsvcs.dll (by name or by ordinal #24), a living-off-the-land technique to dump LSASS memory and extract credentials without external tools. Also detects renamed rundll32 via OriginalFileName.
 references:
     - https://attack.mitre.org/techniques/T1003/001/
 author: Aragon
 date: 2026-10-22
+modified: 2026-10-29
 logsource:
     product: windows
     category: process_creation
 detection:
-    selection:
-        Image|endswith: '\rundll32.exe'
-        CommandLine|contains|all:
-            - 'comsvcs.dll'
+    selection_img:
+        - Image|endswith: '\rundll32.exe'
+        - OriginalFileName: 'RUNDLL32.EXE'
+    selection_dll:
+        CommandLine|contains: 'comsvcs'
+    selection_func:
+        CommandLine|contains:
             - 'MiniDump'
-    condition: selection
+            - '#24'
+            - '#+24'
+    condition: all of selection_*
 level: critical
 tags:
     - attack.credential_access
     - attack.t1003.001
 falsepositives:
-    - Extremely rare; comsvcs.dll MiniDump is almost never used legitimately outside of debugging by developers
+    - Very rare; possible developer debugging sessions
