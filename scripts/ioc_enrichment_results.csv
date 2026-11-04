@@ -1,0 +1,3 @@
+ip,timestamp,abuse_score,abuse_country,abuse_isp,abuse_reports,is_tor,vt_malicious,vt_suspicious,vt_harmless,vt_reputation
+40.80.148.42,2026-11-04T12:11:05.916170,0,US,Microsoft Corporation,0,False,1,0,54,0
+23.22.63.114,2026-11-04T12:11:06.616573,0,US,Amazon Data Services Northern Virginia,0,False,0,0,55,-9
