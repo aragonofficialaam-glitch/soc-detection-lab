@@ -36,7 +36,7 @@ This lab was built end-to-end — from infrastructure to attack simulation to de
 
 
 
-!\[Lab Topology](docs/topology.png)
+!\[Lab Topology](docs/topology.jpg)
 
 
 
@@ -74,7 +74,7 @@ soc-detection-lab/
 
 └── docs/
 
-└── topology.png # Network architecture diagram
+└── topology.jpg # Network architecture diagram
 
 
 
