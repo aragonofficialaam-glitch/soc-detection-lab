@@ -1,0 +1,161 @@
+{
+  "name": "SOC Detection Coverage - soclab.local Lab",
+  "versions": {
+    "attack": "17",
+    "navigator": "5.1.0",
+    "layer": "4.5"
+  },
+  "domain": "enterprise-attack",
+  "description": "Detection coverage map for the SOC Detection & Response Lab. Each technique shown here has a corresponding Sigma/SPL detection rule built and validated against real attack traffic. Colors indicate detection severity: yellow = Medium, orange = High, red = Critical.",
+  "filters": {
+    "platforms": ["Windows"]
+  },
+  "sorting": 0,
+  "layout": {
+    "layout": "side",
+    "aggregateFunction": "average",
+    "showID": true,
+    "showName": true,
+    "showAggregateScores": false,
+    "countUnscored": false,
+    "expandedSubtechniques": "none"
+  },
+  "hideDisabled": false,
+  "techniques": [
+    {
+      "techniqueID": "T1087.002",
+      "tactic": "discovery",
+      "color": "#ffde59",
+      "comment": "Kerberos User Enumeration (Kerbrute) - detects unauthenticated AS-REQ enumeration of valid domain accounts. Severity: Medium.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "kerberos-user-enum.yml"},
+        {"name": "Investigation", "value": "Investigation #1 - Identity-Based Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1110.003",
+      "tactic": "credential-access",
+      "color": "#ff7f27",
+      "comment": "Kerberos Password Brute Force (Kerbrute) - detects 3+ failed pre-auth followed by success. Severity: High.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "kerberos-brute-force.yml"},
+        {"name": "Investigation", "value": "Investigation #1 - Identity-Based Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1136.001",
+      "tactic": "persistence",
+      "color": "#e81123",
+      "comment": "Domain Admin Privilege Escalation - detects account creation shortly before Domain Admins addition. Severity: Critical.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "new-domain-admin.yml"},
+        {"name": "Investigation", "value": "Investigation #1 - Identity-Based Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1098.007",
+      "tactic": "privilege-escalation",
+      "color": "#e81123",
+      "comment": "Domain Admin Privilege Escalation - account added to Domain Admins group. Severity: Critical.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "new-domain-admin.yml"},
+        {"name": "Investigation", "value": "Investigation #1 - Identity-Based Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1053.005",
+      "tactic": "execution",
+      "color": "#ff7f27",
+      "comment": "Remote Command Execution via Task Scheduler (atexec) + Local Scheduled Task Creation (Atomic Red Team). Severity: High / Medium.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rules", "value": "task-scheduler-system-exec.yml, scheduled-task-local-creation.yml"},
+        {"name": "Investigations", "value": "Investigation #1 and #2"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1003.006",
+      "tactic": "credential-access",
+      "color": "#e81123",
+      "comment": "DCSync Credential Extraction - non-DC account exercising Directory Replication rights. Severity: Critical.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "dcsync-replication-abuse.yml"},
+        {"name": "Investigation", "value": "Investigation #1 - Identity-Based Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1059.001",
+      "tactic": "execution",
+      "color": "#ffde59",
+      "comment": "Obfuscated PowerShell Execution (-EncodedCommand). Severity: Medium.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "powershell-encoded-command.yml"},
+        {"name": "Investigation", "value": "Investigation #2 - Endpoint Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1003.001",
+      "tactic": "credential-access",
+      "color": "#e81123",
+      "comment": "LSASS Memory Dump via comsvcs.dll (living-off-the-land). Severity: Critical.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "lsass-dump-comsvcs.yml"},
+        {"name": "Investigation", "value": "Investigation #2 - Endpoint Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1547.001",
+      "tactic": "persistence",
+      "color": "#ffde59",
+      "comment": "Registry Run Key Persistence. Severity: Medium.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "registry-run-key-persistence.yml"},
+        {"name": "Investigation", "value": "Investigation #2 - Endpoint Attacks"}
+      ],
+      "showSubtechniques": false
+    },
+    {
+      "techniqueID": "T1055",
+      "tactic": "defense-evasion",
+      "color": "#ff7f27",
+      "comment": "RWX Process Injection (MockingJay-style). Evaded Sysmon EventID 8/10; detection relies on known injector binary execution as a compensating control. Severity: High.",
+      "enabled": true,
+      "metadata": [
+        {"name": "Detection Rule", "value": "process-injection-mockingjay-toolchain.yml"},
+        {"name": "Investigation", "value": "Investigation #2 - Endpoint Attacks"},
+        {"name": "Note", "value": "Confirmed gap in Sysmon default process-injection telemetry"}
+      ],
+      "showSubtechniques": false
+    }
+  ],
+  "gradient": {
+    "colors": ["#ffde59", "#ff7f27", "#e81123"],
+    "minValue": 0,
+    "maxValue": 100
+  },
+  "legendItems": [
+    {"label": "Medium Severity", "color": "#ffde59"},
+    {"label": "High Severity", "color": "#ff7f27"},
+    {"label": "Critical Severity", "color": "#e81123"}
+  ],
+  "showTacticRowBackground": false,
+  "tacticRowBackground": "#dddddd",
+  "selectTechniquesAcrossTactics": true,
+  "selectSubtechniquesWithParent": false
+}
