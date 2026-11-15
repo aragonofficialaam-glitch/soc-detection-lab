@@ -30,7 +30,6 @@ jobs:
           import glob
           import sys
 
-          required_fields = ['title', 'detection', 'logsource']
           files = glob.glob('detections/sigma/*.yml')
 
           if not files:
@@ -42,15 +41,23 @@ jobs:
           for file in files:
               try:
                   with open(file, 'r') as f:
-                      rule = yaml.safe_load(f)
+                      docs = list(yaml.safe_load_all(f))
 
-                  missing = [field for field in required_fields if field not in rule]
-
-                  if missing:
-                      print(f"FAIL: {file} - missing required fields: {missing}")
+                  if not docs:
+                      print(f"FAIL: {file} - empty file")
                       failed = True
-                  else:
-                      print(f"OK: {file}")
+                      continue
+
+                  for i, doc in enumerate(docs):
+                      is_correlation = isinstance(doc, dict) and 'correlation' in doc
+                      required = ['title', 'id', 'correlation'] if is_correlation else ['title', 'detection', 'logsource']
+                      missing = [field for field in required if field not in doc]
+
+                      if missing:
+                          print(f"FAIL: {file} (document {i}) - missing required fields: {missing}")
+                          failed = True
+                      else:
+                          print(f"OK: {file} (document {i})")
 
               except yaml.YAMLError as e:
                   print(f"FAIL: {file} - invalid YAML syntax: {e}")
@@ -59,5 +66,5 @@ jobs:
           if failed:
               sys.exit(1)
           else:
-              print(f"\nAll {len(files)} Sigma rules validated successfully.")
+              print(f"\nAll Sigma rule files validated successfully ({len(files)} files).")
           EOF
