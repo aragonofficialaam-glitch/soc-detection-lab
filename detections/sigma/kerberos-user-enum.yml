@@ -1,70 +1,46 @@
-name: Validate Sigma Rules
-
-on:
-  push:
-    paths:
-      - 'detections/sigma/**.yml'
-  pull_request:
-    paths:
-      - 'detections/sigma/**.yml'
-
-jobs:
-  validate:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: pip install pyyaml
-
-      - name: Validate Sigma rule syntax and required fields
-        run: |
-          python3 - <<'EOF'
-          import yaml
-          import glob
-          import sys
-
-          files = glob.glob('detections/sigma/*.yml')
-
-          if not files:
-              print("FAIL: No Sigma rule files found in detections/sigma/")
-              sys.exit(1)
-
-          failed = False
-
-          for file in files:
-              try:
-                  with open(file, 'r') as f:
-                      docs = list(yaml.safe_load_all(f))
-
-                  if not docs:
-                      print(f"FAIL: {file} - empty file")
-                      failed = True
-                      continue
-
-                  for i, doc in enumerate(docs):
-                      is_correlation = isinstance(doc, dict) and 'correlation' in doc
-                      required = ['title', 'id', 'correlation'] if is_correlation else ['title', 'detection', 'logsource']
-                      missing = [field for field in required if field not in doc]
-
-                      if missing:
-                          print(f"FAIL: {file} (document {i}) - missing required fields: {missing}")
-                          failed = True
-                      else:
-                          print(f"OK: {file} (document {i})")
-
-              except yaml.YAMLError as e:
-                  print(f"FAIL: {file} - invalid YAML syntax: {e}")
-                  failed = True
-
-          if failed:
-              sys.exit(1)
-          else:
-              print(f"\nAll Sigma rule files validated successfully ({len(files)} files).")
-          EOF
+title: Kerberos TGT Request (4768)
+id: 3c8e1f2a-9b7d-4a61-8e2f-5d0c4b9a7e13
+name: kerberos_tgt_request
+status: experimental
+description: Base rule. Kerberos TGT requests (AS-REQ) excluding loopback sources. Used by the enumeration correlation rule.
+author: Aragon
+date: 2026-10-21
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4768
+    filter_loopback:
+        IpAddress:
+            - '::1'
+            - '127.0.0.1'
+            - '::ffff:127.0.0.1'
+    condition: selection and not filter_loopback
+level: informational
+---
+title: Kerberos User Enumeration via Multiple AS-REQ
+id: 8a1d4e6b-2f3c-4b9e-a7d5-1c0f6e8b3a92
+status: experimental
+description: Detects a single source requesting Kerberos TGTs (4768) for more than 3 distinct accounts within 1 minute, indicating user enumeration or password spraying (e.g. Kerbrute).
+references:
+    - https://attack.mitre.org/techniques/T1087/002/
+author: Aragon
+date: 2026-10-21
+correlation:
+    type: value_count
+    rules:
+        - kerberos_tgt_request
+    group-by:
+        - IpAddress
+    timespan: 1m
+    condition:
+        gt: 3
+        field: TargetUserName
+tags:
+    - attack.discovery
+    - attack.t1087.002
+falsepositives:
+    - Admin tools or scripts that query many accounts
+    - Shared hosts (jump servers, Citrix/RDS) where many users log in from the same IP
+level: medium
