@@ -65,3 +65,4 @@ tags:
 falsepositives:
     - Legitimate onboarding of a new administrator (must match an approved change ticket)
 level: critical
+# validated
