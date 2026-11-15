@@ -24,6 +24,7 @@ id: 8a1d4e6b-2f3c-4b9e-a7d5-1c0f6e8b3a92
 status: experimental
 description: Detects a single source requesting Kerberos TGTs (4768) for more than 3 distinct accounts within 1 minute, indicating user enumeration or password spraying (e.g. Kerbrute).
 references:
+#soclab
     - https://attack.mitre.org/techniques/T1087/002/
 author: Aragon
 date: 2026-10-21
