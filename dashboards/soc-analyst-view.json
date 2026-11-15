@@ -1,0 +1,392 @@
+{
+    "title": "SOC Detection & Response Lab – Analyst View",
+    "description": "Analyst view of detections across Active Directory and endpoints, mapped to MITRE ATT&CK.",
+    "inputs": {
+        "input_global_trp": {
+            "options": {
+                "defaultValue": "0,now",
+                "token": "global_time"
+            },
+            "title": "Global Time Range",
+            "type": "input.timerange"
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": {
+                    "queryParameters": {
+                        "earliest": "$global_time.earliest$",
+                        "latest": "$global_time.latest$"
+                    }
+                }
+            },
+            "ds.spl2": {
+                "options": {
+                    "queryParameters": {
+                        "earliest": "$global_time.earliest$",
+                        "latest": "$global_time.latest$"
+                    }
+                }
+            }
+        },
+        "visualizations": {
+            "global": {
+                "showProgressBar": true
+            }
+        }
+    },
+    "visualizations": {
+        "viz_3mgRUAA7": {
+            "dataSources": {
+                "primary": "ds_GFEZhZwY"
+            },
+            "title": "Alerts Fired",
+            "type": "splunk.singlevalue"
+        },
+        "viz_Fj9VmaUw": {
+            "dataSources": {
+                "primary": "ds_nYTXTApH"
+            },
+            "title": "Account Creation & Privileged Group Changes",
+            "type": "splunk.table"
+        },
+        "viz_Fs7ocgmc": {
+            "dataSources": {
+                "primary": "ds_hv0Mr7HM"
+            },
+            "title": "Obfuscated PowerShell Execution",
+            "type": "splunk.table"
+        },
+        "viz_GNpgQwTQ": {
+            "dataSources": {
+                "primary": "ds_CyMq2zx3"
+            },
+            "title": "Telemetry Sources",
+            "type": "splunk.singlevalue"
+        },
+        "viz_GYS3JLIq": {
+            "containerOptions": {
+                "visibility": {}
+            },
+            "dataSources": {
+                "primary": "ds_U9dnb4EK"
+            },
+            "title": "Active Detection Rules",
+            "type": "splunk.singlevalue"
+        },
+        "viz_OCPYIutM": {
+            "dataSources": {
+                "primary": "ds_cucUMzJ3"
+            },
+            "title": "Monitored Hosts",
+            "type": "splunk.singlevalue"
+        },
+        "viz_XmJpxZvT": {
+            "dataSources": {
+                "primary": "ds_a4ced0gv"
+            },
+            "title": "Persistence Mechanisms Created",
+            "type": "splunk.table"
+        },
+        "viz_f7aMHzQc": {
+            "containerOptions": {},
+            "dataSources": {
+                "primary": "ds_GCr03bgK"
+            },
+            "showLastUpdated": false,
+            "showProgressBar": true,
+            "title": "Failed Authentication by Source IP",
+            "type": "splunk.table"
+        },
+        "viz_hCbbZsH7": {
+            "dataSources": {
+                "primary": "ds_sJoohVJ3"
+            },
+            "options": {
+                "yAxisMajorTickInterval": 1,
+                "yAxisMin": 0
+            },
+            "title": "Detection Coverage by MITRE ATT&CK Tactic",
+            "type": "splunk.bar"
+        },
+        "viz_lxfbX3T9": {
+            "dataSources": {
+                "primary": "ds_f6lV6lPo"
+            },
+            "title": "Suspicious RWX DLL Load – Process Injection (MockingJay)",
+            "type": "splunk.table"
+        },
+        "viz_niqT3KO1": {
+            "dataSources": {
+                "primary": "ds_Q5RCBX7J"
+            },
+            "title": "LSASS Memory Access – Credential Dumping",
+            "type": "splunk.table"
+        },
+        "viz_og2CODF5": {
+            "dataSources": {
+                "primary": "ds_ySPYGMXw"
+            },
+            "options": {},
+            "title": "Risk-Based Alert Prioritization (Detections × Vulnerability Context)",
+            "description": "Alerts on assets with Critical + KEV vulnerabilities are escalated to Critical. Asset-to-vulnerability mapping from Project 1 (vuln-mgmt-pipeline).",
+            "type": "splunk.table"
+        },
+        "viz_pbFLbCJD": {
+            "dataSources": {
+                "primary": "ds_8PMQnAPs"
+            },
+            "title": "Remote Execution as SYSTEM via Task Scheduler",
+            "type": "splunk.table"
+        },
+        "viz_uozuJJE6": {
+            "dataSources": {
+                "primary": "ds_1Nm0ARsC"
+            },
+            "title": "Detection Summary – All Rules",
+            "type": "splunk.table"
+        },
+        "viz_uqUgg3h1": {
+            "dataSources": {
+                "primary": "ds_TLnyVd5g"
+            },
+            "title": "DCSync – Non-DC Accounts Requesting Replication",
+            "type": "splunk.table"
+        }
+    },
+    "dataSources": {
+        "ds_1Nm0ARsC": {
+            "name": "alert_queue",
+            "options": {
+                "query": "index=ad host=DC01 EventCode=4771 Failure_Code=\"0x18\" Client_Address!=\"::1\"\n| bin _time span=5m\n| stats count as c by _time Account_Name Client_Address host\n| where c > 2\n| eval Alert=\"Kerberos Password Brute Force\", Severity=\"Medium\", Technique=\"T1110.003\", Tactic=\"Credential Access\"\n| append [search index=ad host=DC01 EventCode=4728 Group_Name=\"Domain Admins\"\n    | eval Alert=\"New Domain Admin After Account Creation\", Severity=\"High\", Technique=\"T1098\", Tactic=\"Persistence\"]\n| append [search index=ad host=DC01 EventCode=4662 (\"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2\" OR \"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\") Account_Name!=\"*$\"\n    | eval Alert=\"Potential DCSync Attack\", Severity=\"Critical\", Technique=\"T1003.006\", Tactic=\"Credential Access\"]\n| append [search index=sysmon host=DC01 EventCode=1 Image=\"*\\\\cmd.exe\" ParentImage=\"*\\\\svchost.exe\" User=\"NT AUTHORITY\\\\SYSTEM\" CommandLine=\"*Windows\\\\Temp*\"\n    | eval Alert=\"Remote Command Execution via Task Scheduler\", Severity=\"Medium\", Technique=\"T1053.005\", Tactic=\"Execution\"]\n| append [search index=sysmon EventCode=1 (Image=\"*\\\\powershell.exe\" OR Image=\"*\\\\pwsh.exe\") (CommandLine=\"* -enc*\" OR CommandLine=\"* -e *\" OR CommandLine=\"*-EncodedCommand*\" OR CommandLine=\"*FromBase64String*\" OR CommandLine=\"*-w hidden*\" OR CommandLine=\"*-nop*\")\n    | eval Alert=\"Obfuscated PowerShell Execution\", Severity=\"High\", Technique=\"T1059.001\", Tactic=\"Execution\"]\n| append [search index=sysmon ((EventCode=10 TargetImage=\"*\\\\lsass.exe\" (GrantedAccess=\"0x1010\" OR GrantedAccess=\"0x1410\" OR GrantedAccess=\"0x1438\" OR GrantedAccess=\"0x143a\" OR GrantedAccess=\"0x1fffff\") NOT (SourceImage=\"*\\\\csrss.exe\" OR SourceImage=\"*\\\\wininit.exe\" OR SourceImage=\"*\\\\services.exe\" OR SourceImage=\"*\\\\MsMpEng.exe\" OR SourceImage=\"*\\\\svchost.exe\" OR SourceImage=\"*\\\\lsm.exe\" OR SourceImage=\"*\\\\wmiprvse.exe\")) OR (EventCode=1 (CommandLine=\"*comsvcs*MiniDump*\" OR CommandLine=\"*procdump*lsass*\" OR CommandLine=\"*-ma lsass*\")))\n    | eval Alert=\"LSASS Memory Access - Credential Dumping\", Severity=\"Critical\", Technique=\"T1003.001\", Tactic=\"Credential Access\"]\n| append [search index=sysmon EventCode=1 Image=\"*\\\\schtasks.exe\" CommandLine=\"*/create*\"\n    | eval Alert=\"Suspicious Scheduled Task Creation\", Severity=\"Medium\", Technique=\"T1053.005\", Tactic=\"Persistence\"]\n| append [search index=sysmon EventCode=13 (TargetObject=\"*\\\\CurrentVersion\\\\Run\\\\*\" OR TargetObject=\"*\\\\CurrentVersion\\\\RunOnce\\\\*\") NOT TargetObject=\"*\\\\RunOnce\\\\GrpConv\" NOT (Image=\"*\\\\OneDriveSetup.exe\" OR Image=\"*\\\\OneDrive.exe\" OR Image=\"*\\\\msedge.exe\" OR Image=\"*\\\\EdgeWebView\\\\*\" OR Image=\"*\\\\Microsoft\\\\EdgeUpdate\\\\*\" OR Image=\"*\\\\Teams.exe\" OR Image=\"*\\\\Microsoft\\\\Edge\\\\Application\\\\*\\\\Installer\\\\setup.exe\" OR Image=\"*\\\\VBoxDrvInst.exe\" OR Image=\"*\\\\DrvInst.exe\")\n    | eval Alert=\"Registry Run Key Modification\", Severity=\"Medium\", Technique=\"T1547.001\", Tactic=\"Persistence\"]\n| append [search index=sysmon EventCode=7 ImageLoaded=\"*\\\\msys-2.0.dll\" NOT (Image=\"*\\\\Program Files\\\\Git\\\\*\" OR Image=\"*\\\\msys64\\\\*\" OR Image=\"*\\\\cygwin*\")\n    | eval Alert=\"Suspicious RWX DLL Load - MockingJay\", Severity=\"High\", Technique=\"T1055\", Tactic=\"Defense Evasion\"]\n| stats count as Hits min(_time) as First_Seen max(_time) as Last_Seen values(Severity) as Severity values(Technique) as Technique values(Tactic) as Tactic values(host) as Host by Alert\n| eval sev_order=case(Severity=\"Critical\",1,Severity=\"High\",2,Severity=\"Medium\",3,true(),4)\n| sort sev_order - Last_Seen\n| eval First_Seen=strftime(First_Seen,\"%Y-%m-%d %H:%M\"), Last_Seen=strftime(Last_Seen,\"%Y-%m-%d %H:%M\")\n| append [| makeresults\n    | eval Severity=\"Medium\", Alert=\"Kerberos User Enumeration\", Technique=\"T1087.002\", Tactic=\"Discovery\", Host=\"DC01\", Hits=0, First_Seen=\"-\", Last_Seen=\"Visibility gap: Kerberos failure auditing disabled\"]\n| table Severity Alert Technique Tactic Host Hits First_Seen Last_Seen"
+            },
+            "type": "ds.search"
+        },
+        "ds_8PMQnAPs": {
+            "name": "remote_exec",
+            "options": {
+                "query": "index=sysmon host=DC01 EventCode=1 Image=\"*\\\\cmd.exe\" ParentImage=\"*\\\\svchost.exe\" User=\"NT AUTHORITY\\\\SYSTEM\" CommandLine=\"*Windows\\\\Temp*\"\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time host User ParentImage CommandLine\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_CyMq2zx3": {
+            "name": "kpi_sources",
+            "options": {
+                "query": "| tstats dc(sourcetype) as sources where index=ad OR index=sysmon OR index=wineventlog"
+            },
+            "type": "ds.search"
+        },
+        "ds_GCr03bgK": {
+            "name": "kerberos_failures",
+            "options": {
+                "query": "index=ad host=DC01 ((EventCode=4771 Failure_Code=\"0x18\") OR (EventCode=4625)) Client_Address!=\"::1\"\n| eval Source=coalesce(Client_Address, Source_Network_Address)\n| eval Source=replace(Source,\"^::ffff:\",\"\")\n| stats count as Failed_Attempts dc(Account_Name) as Accounts_Targeted values(Account_Name) as Accounts min(_time) as First_Seen max(_time) as Last_Seen by Source\n| eval First_Seen=strftime(First_Seen,\"%Y-%m-%d %H:%M\"), Last_Seen=strftime(Last_Seen,\"%Y-%m-%d %H:%M\")\n| sort - Failed_Attempts"
+            },
+            "type": "ds.search"
+        },
+        "ds_GFEZhZwY": {
+            "name": "kpi_alerts",
+            "options": {
+                "query": "index=_audit action=alert_fired\n| stats count"
+            },
+            "type": "ds.search"
+        },
+        "ds_Q5RCBX7J": {
+            "name": "lsass_access",
+            "options": {
+                "query": "index=sysmon ((EventCode=10 TargetImage=\"*\\\\lsass.exe\" (GrantedAccess=\"0x1010\" OR GrantedAccess=\"0x1410\" OR GrantedAccess=\"0x1438\" OR GrantedAccess=\"0x143a\" OR GrantedAccess=\"0x1fffff\") NOT (SourceImage=\"*\\\\csrss.exe\" OR SourceImage=\"*\\\\wininit.exe\" OR SourceImage=\"*\\\\services.exe\" OR SourceImage=\"*\\\\MsMpEng.exe\" OR SourceImage=\"*\\\\svchost.exe\" OR SourceImage=\"*\\\\lsm.exe\" OR SourceImage=\"*\\\\wmiprvse.exe\")) OR (EventCode=1 (CommandLine=\"*comsvcs*MiniDump*\" OR CommandLine=\"*procdump*lsass*\" OR CommandLine=\"*-ma lsass*\")))\n| eval Process=coalesce(SourceImage, Image)\n| eval CommandLine=if(len(CommandLine)>100, substr(CommandLine,1,100).\"...\", CommandLine)\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time host User Process CommandLine\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_TLnyVd5g": {
+            "name": "dcsync_events",
+            "options": {
+                "query": "index=ad host=DC01 EventCode=4662 (\"1131f6ad-9c07-11d1-f79f-00c04fc2dcd2\" OR \"1131f6aa-9c07-11d1-f79f-00c04fc2dcd2\") Account_Name!=\"*$\"\n| stats count as Replication_Requests min(_time) as First_Seen max(_time) as Last_Seen by Account_Name host\n| eval First_Seen=strftime(First_Seen,\"%Y-%m-%d %H:%M\"), Last_Seen=strftime(Last_Seen,\"%Y-%m-%d %H:%M\")\n| rename Account_Name as Account, host as Target_DC"
+            },
+            "type": "ds.search"
+        },
+        "ds_U9dnb4EK": {
+            "name": "kpi_rules",
+            "options": {
+                "query": "| rest /servicesNS/-/-/saved/searches splunk_server=local\n| search is_scheduled=1 disabled=0 eai:acl.owner!=\"nobody\"\n| stats count"
+            },
+            "type": "ds.search"
+        },
+        "ds_a4ced0gv": {
+            "name": "persistence_events",
+            "options": {
+                "query": "index=sysmon ((EventCode=1 Image=\"*\\\\schtasks.exe\" CommandLine=\"*/create*\") OR (EventCode=13 (TargetObject=\"*\\\\CurrentVersion\\\\Run\\\\*\" OR TargetObject=\"*\\\\CurrentVersion\\\\RunOnce\\\\*\") NOT TargetObject=\"*\\\\RunOnce\\\\GrpConv\" NOT (Image=\"*\\\\OneDriveSetup.exe\" OR Image=\"*\\\\OneDrive.exe\" OR Image=\"*\\\\msedge.exe\" OR Image=\"*\\\\EdgeWebView\\\\*\" OR Image=\"*\\\\Microsoft\\\\EdgeUpdate\\\\*\" OR Image=\"*\\\\Teams.exe\" OR Image=\"*\\\\Microsoft\\\\Edge\\\\Application\\\\*\\\\Installer\\\\setup.exe\" OR Image=\"*\\\\VBoxDrvInst.exe\" OR Image=\"*\\\\DrvInst.exe\")))\n| eval Technique=if(EventCode=1,\"T1053.005 Scheduled Task\",\"T1547.001 Run Key\")\n| eval Detail=coalesce(TargetObject, CommandLine)\n| eval Detail=if(len(Detail)>100, substr(Detail,1,100).\"...\", Detail)\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time host Technique Image Detail\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_cucUMzJ3": {
+            "name": "kpi_hosts",
+            "options": {
+                "query": "| tstats dc(host) as hosts where index=ad OR index=sysmon OR index=wineventlog"
+            },
+            "type": "ds.search"
+        },
+        "ds_f6lV6lPo": {
+            "name": "rwx_dll_load",
+            "options": {
+                "query": "index=sysmon EventCode=7 ImageLoaded=\"*\\\\msys-2.0.dll\" NOT (Image=\"*\\\\Program Files\\\\Git\\\\*\" OR Image=\"*\\\\msys64\\\\*\" OR Image=\"*\\\\cygwin*\")\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time host User Image ImageLoaded Signed\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_hv0Mr7HM": {
+            "name": "encoded_powershell",
+            "options": {
+                "query": "index=sysmon EventCode=1 (Image=\"*\\\\powershell.exe\" OR Image=\"*\\\\pwsh.exe\") (CommandLine=\"* -enc*\" OR CommandLine=\"* -e *\" OR CommandLine=\"*-EncodedCommand*\" OR CommandLine=\"*FromBase64String*\" OR CommandLine=\"*-w hidden*\" OR CommandLine=\"*-nop*\")\n| eval CommandLine=if(len(CommandLine)>100, substr(CommandLine,1,100).\"...\", CommandLine)\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time host User ParentImage CommandLine\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_nYTXTApH": {
+            "name": "priv_group_changes",
+            "options": {
+                "query": "index=ad host=DC01 (EventCode=4720 OR EventCode=4728 OR EventCode=4732 OR EventCode=4756) NOT (\"WDAGUtilityAccount\" OR \"DefaultAccount\" OR \"krbtgt\" OR \"Guest\" OR \"ANONYMOUS LOGON\")\n| eval Action=case(EventCode=4720,\"User account created\", EventCode=4728,\"Added to global group\", EventCode=4732,\"Added to local group\", EventCode=4756,\"Added to universal group\")\n| eval Performed_By=mvindex(Account_Name,0)\n| where NOT like(Performed_By,\"%$\")\n| eval Time=strftime(_time,\"%Y-%m-%d %H:%M\")\n| table Time Action Group_Name user Performed_By\n| rename user as Target_Account\n| sort - Time"
+            },
+            "type": "ds.search"
+        },
+        "ds_sJoohVJ3": {
+            "name": "coverage_by_tactic",
+            "options": {
+                "extend": "ds_1Nm0ARsC",
+                "query": "| stats count as Rules by Tactic\n| sort - Rules"
+            },
+            "type": "ds.chain"
+        },
+        "ds_ySPYGMXw": {
+            "name": "risk_chain",
+            "options": {
+                "extend": "ds_1Nm0ARsC",
+                "query": "| search Hits!=0\n| mvexpand Host\n| eval Asset_Software=case(Host=\"DC01\",\"nginx:1.14\", true(),\"-\")\n| eval CVE=case(Host=\"DC01\",\"CVE-2020-15999\", true(),\"-\")\n| eval In_KEV=case(Host=\"DC01\",\"Yes\", true(),\"No\")\n| eval Vuln_Severity=case(Host=\"DC01\",\"Critical\", true(),\"-\")\n| eval Final_Severity=if(Vuln_Severity=\"Critical\" AND In_KEV=\"Yes\",\"Critical\",Severity)\n| eval Escalated=if(Final_Severity!=Severity,\"Yes (Critical + KEV asset)\",\"No\")\n| eval sev_order=case(Final_Severity=\"Critical\",1,Final_Severity=\"High\",2,Final_Severity=\"Medium\",3,true(),4)\n| sort sev_order Alert\n| rename Severity as Original_Severity\n| table Final_Severity Original_Severity Escalated Alert Host Asset_Software CVE In_KEV"
+            },
+            "type": "ds.chain"
+        }
+    },
+    "layout": {
+        "globalInputs": [
+            "input_global_trp"
+        ],
+        "layoutDefinitions": {
+            "layout_1": {
+                "options": {
+                    "gutterSize": 10,
+                    "height": 960,
+                    "width": 1440
+                },
+                "structure": [
+                    {
+                        "item": "viz_hCbbZsH7",
+                        "position": { "h": 400, "w": 1440, "x": 0, "y": 538 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_3mgRUAA7",
+                        "position": { "h": 138, "w": 360, "x": 0, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_GYS3JLIq",
+                        "position": { "h": 138, "w": 360, "x": 360, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_GNpgQwTQ",
+                        "position": { "h": 138, "w": 360, "x": 720, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_OCPYIutM",
+                        "position": { "h": 138, "w": 360, "x": 1080, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_uozuJJE6",
+                        "position": { "h": 400, "w": 1440, "x": 0, "y": 138 },
+                        "type": "block"
+                    }
+                ],
+                "type": "grid"
+            },
+            "layout_1SYgG9FA": {
+                "options": {
+                    "width": 1440
+                },
+                "structure": [
+                    {
+                        "item": "viz_Fs7ocgmc",
+                        "position": { "h": 401, "w": 719, "x": 0, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_niqT3KO1",
+                        "position": { "h": 401, "w": 721, "x": 719, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_lxfbX3T9",
+                        "position": { "h": 400, "w": 721, "x": 719, "y": 401 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_XmJpxZvT",
+                        "position": { "h": 400, "w": 719, "x": 0, "y": 401 },
+                        "type": "block"
+                    }
+                ],
+                "type": "grid"
+            },
+            "layout_VF9CIl7G": {
+                "options": {
+                    "width": 1440
+                },
+                "structure": [
+                    {
+                        "item": "viz_og2CODF5",
+                        "position": { "h": 567, "w": 1440, "x": 0, "y": 0 },
+                        "type": "block"
+                    }
+                ],
+                "type": "grid"
+            },
+            "layout_dHWpCfmr": {
+                "options": {
+                    "width": 1440
+                },
+                "structure": [
+                    {
+                        "item": "viz_f7aMHzQc",
+                        "position": { "h": 400, "w": 719, "x": 0, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_Fj9VmaUw",
+                        "position": { "h": 400, "w": 721, "x": 719, "y": 0 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_pbFLbCJD",
+                        "position": { "h": 400, "w": 721, "x": 719, "y": 400 },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_uqUgg3h1",
+                        "position": { "h": 400, "w": 719, "x": 0, "y": 400 },
+                        "type": "block"
+                    }
+                ],
+                "type": "grid"
+            }
+        },
+        "options": {},
+        "tabs": {
+            "items": [
+                { "label": "Overview", "layoutId": "layout_1" },
+                { "label": "Identity Detections", "layoutId": "layout_dHWpCfmr" },
+                { "label": "Endpoint Detections", "layoutId": "layout_1SYgG9FA" },
+                { "label": "Risk Prioritization", "layoutId": "layout_VF9CIl7G" }
+            ]
+        }
+    }
+}
