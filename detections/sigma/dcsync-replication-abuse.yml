@@ -27,3 +27,4 @@ tags:
     - attack.t1003.006
 falsepositives:
     - Azure AD Connect (MSOL_ accounts) or backup tools explicitly granted replication rights (allowlist by account)
+    # validated
