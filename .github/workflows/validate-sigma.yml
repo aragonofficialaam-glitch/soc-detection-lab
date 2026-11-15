@@ -1,0 +1,63 @@
+name: Validate Sigma Rules
+
+on:
+  push:
+    paths:
+      - 'detections/sigma/**.yml'
+  pull_request:
+    paths:
+      - 'detections/sigma/**.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install pyyaml
+
+      - name: Validate Sigma rule syntax and required fields
+        run: |
+          python3 - <<'EOF'
+          import yaml
+          import glob
+          import sys
+
+          required_fields = ['title', 'detection', 'logsource']
+          files = glob.glob('detections/sigma/*.yml')
+
+          if not files:
+              print("FAIL: No Sigma rule files found in detections/sigma/")
+              sys.exit(1)
+
+          failed = False
+
+          for file in files:
+              try:
+                  with open(file, 'r') as f:
+                      rule = yaml.safe_load(f)
+
+                  missing = [field for field in required_fields if field not in rule]
+
+                  if missing:
+                      print(f"FAIL: {file} - missing required fields: {missing}")
+                      failed = True
+                  else:
+                      print(f"OK: {file}")
+
+              except yaml.YAMLError as e:
+                  print(f"FAIL: {file} - invalid YAML syntax: {e}")
+                  failed = True
+
+          if failed:
+              sys.exit(1)
+          else:
+              print(f"\nAll {len(files)} Sigma rules validated successfully.")
+          EOF
